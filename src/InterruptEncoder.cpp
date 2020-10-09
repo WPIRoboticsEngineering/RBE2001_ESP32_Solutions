@@ -4,14 +4,7 @@
  *  Created on: Oct 8, 2020
  *      Author: hephaestus
  */
-
 #include "InterruptEncoder.h"
-
-void IRAM_ATTR stateUpdate(InterruptEncoder* object){
-	object->aState = digitalRead(object->apin);
-	object->bState = digitalRead(object->bpin);
-}
-
 void IRAM_ATTR encoderAISR(void * arg) {
 	InterruptEncoder* object=(InterruptEncoder*)arg;
 	long start = micros();
@@ -19,19 +12,15 @@ void IRAM_ATTR encoderAISR(void * arg) {
 	if (duration >= US_DEBOUNCE) {
 		object->microsLastA = start;
 		object->microsTimeBetweenTicks=duration;
-		stateUpdate(object);
+		object->aState = digitalRead(object->apin);
+		object->bState = digitalRead(object->bpin);
 		if (object->aState == object->bState)
 			object->count++;
 		else
 			object->count--;
 	}
 }
-
-
-InterruptEncoder::InterruptEncoder() {
-
-}
-
+InterruptEncoder::InterruptEncoder() {}
 InterruptEncoder::~InterruptEncoder() {
 	if(attached)
 		detachInterrupt(digitalPinToInterrupt(apin));
@@ -44,12 +33,8 @@ void InterruptEncoder::attach(int aPinNum, int bPinNum) {
 		return;
 	apin = aPinNum;
 	bpin = bPinNum;
-
 	pinMode(apin, INPUT_PULLUP);
 	pinMode(bpin, INPUT_PULLUP);
-
 	attachInterruptArg(digitalPinToInterrupt(apin), encoderAISR,this, CHANGE);
-	return;
-
 }
 
